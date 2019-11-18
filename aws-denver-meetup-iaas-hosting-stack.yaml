@@ -33,7 +33,7 @@
       MinLength: 1
       MaxLength: 16
     DBPassword:
-      Default: ktinnmeetupdbPwd!0
+      Default: awsmeetupdbPwd!0
       NoEcho: true
       Description: The database admin account password
       Type: String
@@ -76,7 +76,7 @@
       Type: String
       MinLength: 1
       MaxLength: 32
-      Default: kt-meetup
+      Default: aws-denver-meetup
   
   # Metadata section allows for paramter grouping
   Metadata: 
