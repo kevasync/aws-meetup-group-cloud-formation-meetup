@@ -3,15 +3,21 @@
   Description: Creates a VPC with subnet containing EC2 Instance, as well as and RDS Instance that allows traffic from the VPCs default security group
 
   Parameters:
+    # Operations
+    CostCenter:
+      Default: CC-1234
+      Description: Cost center that assumes financial responsibility for resources provisioned
+      Type: String
+
     # Networking Parameters  
     VPCName:
       Default: meetup-vpc
       Description: The name of the VPC being created.
       Type: String
-    # VPCBase:
-    #   Default: 192.168.250
-    #   Description: First 3 octets of VPC address space
-    #   Type: String
+    VPCBase:
+      Default: 192.168.250
+      Description: First 3 octets of VPC address space
+      Type: String
 
     # Database parameters
     DBName:
@@ -77,10 +83,14 @@
     AWS::CloudFormation::Interface: 
       ParameterGroups: 
       - Label: 
+          default: Operations
+        Parameters: 
+        - CostCenter
+      - Label: 
           default: Network Configuration
         Parameters: 
         - VPCName
-        # - VPCBase
+        - VPCBase
       - Label: 
           default: RDS Configuration
         Parameters: 
@@ -96,19 +106,6 @@
         - LatestAmiId
         - SSHLocation
         - EC2KeyName
-
-  # Key-value lookup for ip ranges by subnet 
-  Mappings:
-    SubnetConfig:
-      VPC:
-        CIDR: 192.168.250.0/24
-        # CIDR: !Sub ${VPCBase}.0/24
-      EC2Subnet:
-        CIDR: 192.168.250.0/25
-      DBSubnetAZA:
-        CIDR: 192.168.250.128/26
-      DBSubnetAZB:
-        CIDR: 192.168.250.192/26
       
   Resources:
     # Networking
@@ -117,71 +114,55 @@
       Properties:
         EnableDnsSupport: true
         EnableDnsHostnames: true
-        CidrBlock:
-          Fn::FindInMap:
-            - SubnetConfig
-            - VPC
-            - CIDR
+        CidrBlock: !Sub ${VPCBase}.0/24
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
 
-    EC2Subnet:
+    PublicSubnet:
       Type: AWS::EC2::Subnet
       Properties:
         VpcId: !Ref VPC
         AvailabilityZone: !Sub ${AWS::Region}a
-        CidrBlock:
-          Fn::FindInMap:
-            - SubnetConfig
-            - EC2Subnet
-            - CIDR
+        CidrBlock: !Sub ${VPCBase}.0/25
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
 
     DBSubnetAZA:
       Type: AWS::EC2::Subnet
       Properties:
         VpcId: !Ref VPC
         AvailabilityZone: !Sub ${AWS::Region}a
-        CidrBlock:
-          Fn::FindInMap:
-            - SubnetConfig
-            - DBSubnetAZA
-            - CIDR
+        CidrBlock: !Sub ${VPCBase}.128/26
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
 
     DBSubnetAZB:
       Type: AWS::EC2::Subnet
       Properties:
         VpcId: !Ref VPC
         AvailabilityZone: !Sub ${AWS::Region}b
-        CidrBlock:
-          Fn::FindInMap:
-            - SubnetConfig
-            - DBSubnetAZB
-            - CIDR
+        CidrBlock: !Sub ${VPCBase}.192/26
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
 
     InternetGateway:
       Type: AWS::EC2::InternetGateway
       Properties:
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
 
     VPCRouteTable:
       Type: AWS::EC2::RouteTable
       Properties:
         VpcId: !Ref VPC
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
 
     InternetGatewayAttachement:
       Type: AWS::EC2::VPCGatewayAttachment
@@ -189,11 +170,11 @@
         VpcId: !Ref VPC
         InternetGatewayId: !Ref InternetGateway
     
-    EC2SubnetRouteTableAssociation:
+    PublicSubnetRouteTableAssociation:
       Type: AWS::EC2::SubnetRouteTableAssociation
       Properties:
         RouteTableId: !Ref VPCRouteTable
-        SubnetId: !Ref EC2Subnet
+        SubnetId: !Ref PublicSubnet
 
     VPCPublicDefaultRoute:
       Type: AWS::EC2::Route
@@ -211,8 +192,8 @@
         - !Ref DBSubnetAZA
         - !Ref DBSubnetAZB
         Tags: 
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
 
     DBEC2SecurityGroup:
       Type: AWS::EC2::SecurityGroup
@@ -226,8 +207,8 @@
           ToPort: 3306
           SourceSecurityGroupId: !GetAtt [InstanceSecurityGroup, GroupId]
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
     
     MasterDB:
       Type: AWS::RDS::DBInstance
@@ -244,8 +225,8 @@
         - !Ref DBEC2SecurityGroup
         StorageEncrypted: true
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
       DeletionPolicy: Snapshot
 
     # EC2
@@ -265,11 +246,11 @@
           ToPort: 8080
           CidrIp: 0.0.0.0/0
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
     EC2Instance:
       Type: AWS::EC2::Instance
-      DependsOn: EC2Subnet
+      DependsOn: PublicSubnet
       Properties:
         InstanceType: !Ref InstanceType
         ImageId: !Ref LatestAmiId
@@ -277,26 +258,29 @@
         NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeleteOnTermination : true
-          SubnetId: !Ref EC2Subnet
+          SubnetId: !Ref PublicSubnet
           DeviceIndex: 0
           GroupSet: 
           - !Ref InstanceSecurityGroup
         Tags:
-        - Key: Application
-          Value: !Ref AWS::StackName
+        - Key: CostCenter
+          Value: !Ref CostCenter
 
   Outputs:
     # Networking  
+    CostCenter:
+      Description: Cost center associated with resources
+      Value: !Ref CostCenter
     VPCId:
       Description: VPCId of VPC
       Value: !Ref VPC
       Export:
         Name: !Sub ${AWS::Region}-${AWS::StackName}-VPC
-    EC2Subnet:
-      Description: SubnetId of public subnet 0
-      Value: !Ref EC2Subnet
+    PublicSubnet:
+      Description: SubnetId of public subnet
+      Value: !Ref PublicSubnet
       Export:
-        Name: !Sub ${AWS::Region}-${AWS::StackName}-EC2Subnet
+        Name: !Sub ${AWS::Region}-${AWS::StackName}-PublicSubnet
     DBSubnetAZA:
       Description: SubnetId of public subnet 0
       Value: !Ref DBSubnetAZA
@@ -314,9 +298,9 @@
         Name: !Sub ${AWS::Region}-${AWS::StackName}-DefaultSecurityGroup
 
     # RDS
-    MasterJDBCConnectionString:
-      Description: JDBC connection string for the database
-      Value: !Sub jdbc:mysql://${!GetAtt [MasterDB, Endpoint.Address]}:${!GetAtt [MasterDB, Endpoint.Port]}/${!Ref DBName}    
+    MasterRDSEndpoint:
+      Description: RDS Endpoint address
+      Value: !GetAtt [MasterDB, Endpoint.Address]    
 
     # EC2    
     InstanceId:
