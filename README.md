@@ -35,7 +35,7 @@ Install Node.js:
  * `git clone https://github.com/prismicio/vuejs-starter.git`
  * `cd vuejs-starter`
  * `sudo npm install`
- * `npm install serve -g`
+ * `sudo npm install serve -g`
  * `npm run build`
  * `serve -s dist -l 8080`
  * From a browser on your box, navigate to: `http://<EC2 DNS NAme>:8080`
