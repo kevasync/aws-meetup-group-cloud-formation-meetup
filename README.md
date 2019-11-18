@@ -3,9 +3,16 @@ Resources required for AWS Denver IaC Cloud Formation Meetup
 
 
 ## Getting started
- * Clone this repo
  * Create an EC2 Key Pair in AWS console
- * Create a CLoudFormation stack using the provided YAML (You'll need the name of the EC2 Key Pair you just created)
+ * Download and set privs on ssh pem file
+ * Clone this repo
+ * Create a CloudFormation stack using the provided YAML (You'll need the name of the EC2 Key Pair you just created)
+
+Create Key Pair:
+![Create Key Pair](images/ec2KeyPair.png "Create Key Pair")
+
+Download and set privs on ssh pem file:
+![Download and set privs on ssh pem file](images/setupPem.png "Download and set privs on ssh pem file")
 
 
 ### SSH into EC2 instance and install dependencies
@@ -39,7 +46,7 @@ Launch the site:
 
 ### Connect to MySQL and create/query data:
  * Connect to your MySQL DB: `mysql -u meetupdbuser -p -h <RDS DB DNS Name>` 
-    * e.g. `mysql -u meetupdbuser -p -h km1g63yabjjupc8.cpukqocwwu1f.us-east-1.rds.amazonaws.com`
+    * e.g. `mysql -u meetupdbuser -p -h sm17bx4s059zszt.cpukqocwwu1f.us-east-1.rds.amazonaws.com`
  * Enter the password you used when creating the stack
  * `CREATE DATABASE AwsDenverMeetup;`
  * `USE AwsDenverMeetup;`
