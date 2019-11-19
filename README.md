@@ -1,6 +1,12 @@
 # aws-denver-cloud-formation-meetup
 Resources required for AWS Denver IaC Cloud Formation Meetup
 
+## Sample CloudFormation Links
+ * [AWS sample templates](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/sample-templates-services-us-west-2.html)
+ * [AWS Labs sample templates](https://github.com/awslabs/aws-cloudformation-templates)
+
+
+
 
 ## Getting started
  * Create an EC2 Key Pair in AWS console
